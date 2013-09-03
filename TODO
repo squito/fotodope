@@ -1,0 +1,21 @@
+
+TODO:
+---------------
+
+-fix case-sensitivity of Trie
+		-done, needs testing
+
+-upload tags to flickr
+-download tags from flickr
+-Batch jobs should provide description, and be stoppable.  PAUSE is BROKEN!
+-date directories should always be 2-digit -- need to move around LOTS of files ...
+-delete operation should move to temporary delete list, full delete should happen later
+
+-tag view
+-remove "review" tag
+
+-PictureDisplayOptions -- show tags, ratings, flickr status
+-people tags -- people, photographers, groups of people
+	-groups have 3 states -- somebody in the group, group photo, and about the group
+
+-Message Window & Log
