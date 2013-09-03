@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="data/|migrations/" kind="src" path=""/>
+	<classpathentry kind="src" path="migrations"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/CommonUtils"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/TagDag"/>
+	<classpathentry kind="lib" path="/Libraries/lib/flickrapi-1.1.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/h2-1.1.103.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/jdom.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/jheader-0.1.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/TableLayout-bin-jdk1.5-2007-04-21.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/sanselan-0.94-incubator.jar" sourcepath="/Libraries/lib/sanselan-0.94-src"/>
+	<classpathentry kind="lib" path="/Libraries/lib/activation-1.1.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/jaxb-api-2.1.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/jaxb-impl-2.1.3.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/json-20070829.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/postgresql-8.3-603.jdbc4.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/stax-api-1.0-2.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/facebook-java-api-2.0.3.jar"/>
+	<classpathentry kind="lib" path="/Libraries/lib/facebook-java-api-schema-2.0.3.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
