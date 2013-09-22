@@ -170,9 +170,9 @@ public class TestFrame extends JFrame {
 		JSplitPane dateAndSave = getWithSaveSidebar(dateListPanel);
 		dateSelectionPanel = new DateRangePanel(){
 			@Override
-			public void datesChosen(Calendar begin, Calendar end, boolean includeUndated) {
+			public void datesChosen(Calendar begin, Calendar end, boolean includeUndated, boolean highlightsOnly) {
 				try {
-					List<PictureInfo> pics = db.getPicturesBetweenDates(begin, end, includeUndated);
+					List<PictureInfo> pics = db.getPicturesBetweenDates(begin, end, includeUndated, highlightsOnly);
 					dateListPanel.setPictures(pics);
 				} catch (SQLException e) {
 					// TODO Auto-generated catch block

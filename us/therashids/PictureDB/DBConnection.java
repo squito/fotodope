@@ -489,8 +489,12 @@ public abstract class DBConnection implements TagDB<PictureInfo> {
 		return info;
 	}
 	
-	public List<PictureInfo> getPicturesBetweenDates(Calendar start, Calendar end, boolean includeUndated) throws SQLException {
-		PreparedStatement st = conn.prepareStatement(picture_info_select + " WHERE (time_taken > ? AND time_taken < ?)" + (includeUndated ? " OR time_taken IS NULL" : ""));		
+	public List<PictureInfo> getPicturesBetweenDates(Calendar start, Calendar end, boolean includeUndated, boolean highlightsOnly) throws SQLException {
+		String where = " WHERE (time_taken > ? AND time_taken < ?)" +
+				(includeUndated ? " OR time_taken IS NULL" : "") +
+				(highlightsOnly ? " AND f.flickr_id IS NOT NULL" : "");
+		//TODO facebook is another "highlight"
+		PreparedStatement st = conn.prepareStatement(picture_info_select + where);
 		st.setTimestamp(1, new Timestamp(start.getTimeInMillis()));
 		st.setTimestamp(2, new Timestamp(end.getTimeInMillis()));
 		List<PictureInfo> result = new ArrayList<PictureInfo>();
