@@ -57,7 +57,7 @@ import us.therashids.PictureDB.gui.SlideshowViewer.Mode;
 import us.therashids.PictureDB.picture_manipulation.ImageResizer;
 import us.therashids.util.FileCopy;
 
-import com.aetrion.flickr.FlickrException;
+import com.flickr4java.flickr.FlickrException;
 import com.google.code.facebookapi.FacebookException;
 import com.google.code.facebookapi.schema.Album;
 import com.therashids.TagDag.StringTag;

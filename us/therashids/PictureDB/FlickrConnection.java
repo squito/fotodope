@@ -7,21 +7,23 @@ import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.scribe.model.Token;
+import org.scribe.model.Verifier;
 import org.xml.sax.SAXException;
 
-import com.aetrion.flickr.Flickr;
-import com.aetrion.flickr.FlickrException;
-import com.aetrion.flickr.REST;
-import com.aetrion.flickr.RequestContext;
-import com.aetrion.flickr.auth.Auth;
-import com.aetrion.flickr.auth.Permission;
-import com.aetrion.flickr.photos.PhotoList;
-import com.aetrion.flickr.photos.PhotosInterface;
-import com.aetrion.flickr.photosets.Photoset;
-import com.aetrion.flickr.uploader.UploadMetaData;
-import com.aetrion.flickr.uploader.Uploader;
-import com.aetrion.flickr.util.AuthStore;
-import com.aetrion.flickr.util.FileAuthStore;
+import com.flickr4java.flickr.Flickr;
+import com.flickr4java.flickr.FlickrException;
+import com.flickr4java.flickr.REST;
+import com.flickr4java.flickr.RequestContext;
+import com.flickr4java.flickr.auth.Auth;
+import com.flickr4java.flickr.auth.Permission;
+import com.flickr4java.flickr.photos.PhotoList;
+import com.flickr4java.flickr.photos.PhotosInterface;
+import com.flickr4java.flickr.photosets.Photoset;
+import com.flickr4java.flickr.uploader.UploadMetaData;
+import com.flickr4java.flickr.uploader.Uploader;
+import com.flickr4java.flickr.util.AuthStore;
+import com.flickr4java.flickr.util.FileAuthStore;
 
 
 public class FlickrConnection {
@@ -50,22 +52,27 @@ public class FlickrConnection {
 		this.nsid = nsid;
 		
 		if (authsDir != null) {
-			this.authStore = new FileAuthStore(authsDir);
+			try {
+				this.authStore = new FileAuthStore(authsDir);
+			} catch (FlickrException fe) {
+				throw new RuntimeException("error initializing Flickr connection", fe);
+			}
 		}
 	}
 	
 	private void authorize() throws IOException, SAXException, FlickrException {
-		String frob = this.flickr.getAuthInterface().getFrob();
+		Token reqToken = this.flickr.getAuthInterface().getRequestToken();
 		
-		URL authUrl = this.flickr.getAuthInterface().buildAuthenticationUrl(Permission.DELETE, frob);
-		System.out.println("Please visit: " + authUrl.toExternalForm() + " then, hit enter.");
+		String authUrl = this.flickr.getAuthInterface().getAuthorizationUrl(reqToken, Permission.DELETE);
+		System.out.println("Please visit: " + authUrl + ", paste the given code, and hit enter.");
 				
-		System.in.read();
+		Scanner scanner = new Scanner(System.in);
+		String tokenKey = scanner.nextLine();
 		
-		
-		Auth token = this.flickr.getAuthInterface().getToken(frob);
-		RequestContext.getRequestContext().setAuth(token);
-		this.authStore.store(token);
+		Token accessToken = this.flickr.getAuthInterface().getAccessToken(reqToken, new Verifier(tokenKey));
+		Auth auth = this.flickr.getAuthInterface().checkToken(accessToken);
+		RequestContext.getRequestContext().setAuth(auth);
+		this.authStore.store(auth);
 		System.out.println("Thanks.  You probably will not have to do this every time.  Now starting backup.");
 	}
 	
