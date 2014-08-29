@@ -4,16 +4,19 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import us.therashids.PictureDB.DBConnection;
+
 import com.threrashids.migrate.Migration;
 
 
-public class M001 implements Migration {
+public class M001 implements Migration<DBConnection> {
 	
 	public String description() {
 		return "Add tables for pictures uploaded to facebook";
 	}
 	
-	public void migrate(Connection conn) throws SQLException {
+	public void migrate(DBConnection db) throws SQLException {
+		Connection conn = db.conn;
 		Statement st = conn.createStatement();
 		st.executeUpdate(
 						"CREATE TABLE facebook_photos ("

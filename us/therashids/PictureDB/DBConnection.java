@@ -52,7 +52,7 @@ public abstract class DBConnection implements TagDB<PictureInfo> {
 	
 	private static final int needsReviewTagId = 1;
 	
-	Connection conn;
+	public Connection conn;
 	TagDB<PictureInfo> tagdb;
 	
 	//set a default initialization value

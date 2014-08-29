@@ -3,7 +3,6 @@ package us.therashids.PictureDB;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import us.therashids.PictureDB.PropertyLoader.Props;
@@ -31,8 +30,8 @@ public class MigrateHelper {
 			toVersion = Integer.parseInt(line);
 		}
 		
-		Connection conn = DBConnection.getInstance().conn;
-		Migrate.migrate("com.therashids.PictureDB.migrations.M", currentVersion, conn, toVersion);
+		DBConnection db = DBConnection.getInstance();
+		Migrate.migrate("com.therashids.PictureDB.migrations.M", currentVersion, db, toVersion);
 		PropertyLoader.set(Props.DB_VERSION, Integer.toString(toVersion));
 		PropertyLoader.save();
 	}
