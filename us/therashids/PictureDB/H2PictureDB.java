@@ -25,6 +25,11 @@ import us.therashids.PictureDB.PropertyLoader.Props;
  * H2 implementation of picture db connection
  * 
  * 
+ * 
+ *  java -jar h2-1.1.103.jar -url jdbc:h2:tcp://localhost//Users/imran/Desktop/old projects/workspace/PhotoDB/data/test/testdb/db/picturedb
+ *  
+ *  
+ * 
  * @author Imran Rashid
  *
  */
