@@ -34,6 +34,7 @@ public class MigrateHelper {
 		Migrate.migrate("com.therashids.PictureDB.migrations.M", currentVersion, db, toVersion);
 		PropertyLoader.set(Props.DB_VERSION, Integer.toString(toVersion));
 		PropertyLoader.save();
+		db.disconnect();
 	}
 
 }

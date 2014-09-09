@@ -203,9 +203,6 @@ public class DirectorySet {
 	 * Given another directory, will process all the files in that directory,
 	 * and copy them into the "default" directory structure.  This is useful
 	 * for copying images from flash media, other people's cds, etc.
-	 * 
-	 * @param importDir
-	 * @param recursive
 	 */
 	public void importPicturesToDefaultDirectories(File importDir, final PictureImportOptions opts, final FileBrowserPanel fb) throws IOException, SQLException{
 		alreadyExistingPictureFiles = new ArrayList<File>();

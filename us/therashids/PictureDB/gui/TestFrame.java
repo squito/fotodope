@@ -422,7 +422,6 @@ public class TestFrame extends JFrame {
 			return;
 		
 		try{
-			
 			directorySet.importPicturesToDefaultDirectories(opts.getImportFile(), opts, fb);
 		} catch(IOException e){
 			e.printStackTrace();

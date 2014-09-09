@@ -21,5 +21,6 @@
 	<classpathentry kind="lib" path="/Libraries/lib/facebook-java-api-schema-2.0.3.jar"/>
 	<classpathentry kind="lib" path="/Users/imran/Desktop/old projects/workspace/Libraries/lib/flickr4java-2.11.jar"/>
 	<classpathentry kind="lib" path="/Users/imran/Desktop/old projects/workspace/Libraries/lib/scribe-1.3.5.jar"/>
+	<classpathentry kind="lib" path="/Users/imran/Desktop/old projects/workspace/Libraries/lib/joda-time-2.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

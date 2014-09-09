@@ -13,11 +13,16 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import org.joda.time.DateTime;
 
 import us.therashids.PictureDB.PropertyLoader.Props;
 import us.therashids.PictureDB.picture_manipulation.ImageResizer;
@@ -217,6 +222,7 @@ public abstract class DBConnection implements TagDB<PictureInfo> {
 	
 	public PictureInfo addPicture(PictureInfo info) throws SQLException {
 		String cmd = "INSERT INTO picture_files (filename, dir, time_taken, width, height, orientation) VALUES (?, ?, ?, ?, ?, ?)";
+		conn.setAutoCommit(false);
 		PreparedStatement ins = conn.prepareStatement(cmd);
 		ins.setString(1, info.getPictureFile().getAbsolutePath());
 		ins.setString(2, info.getPictureFile().getParentFile().getAbsolutePath());
@@ -232,6 +238,8 @@ public abstract class DBConnection implements TagDB<PictureInfo> {
 		else
 			ins.setNull(6,java.sql.Types.INTEGER);
 		ins.executeUpdate();
+		conn.commit();
+		conn.setAutoCommit(true);
 		cmd = "SELECT currval('picture_files_id_seq')";
 		Statement getId = conn.createStatement();
 		ResultSet rs = getId.executeQuery(cmd);
@@ -490,7 +498,7 @@ public abstract class DBConnection implements TagDB<PictureInfo> {
 	}
 	
 	public List<PictureInfo> getPicturesBetweenDates(Calendar start, Calendar end, boolean includeUndated, boolean highlightsOnly) throws SQLException {
-		String where = " WHERE (time_taken > ? AND time_taken < ?)" +
+		String where = " WHERE (time_taken >= ? AND time_taken < ?)" +
 				(includeUndated ? " OR time_taken IS NULL" : "") +
 				(highlightsOnly ? " AND f.flickr_id IS NOT NULL" : "");
 		//TODO facebook is another "highlight"
@@ -505,6 +513,80 @@ public abstract class DBConnection implements TagDB<PictureInfo> {
 		return result;
 	}
 	
+	public List<PictureInfo> getPicturesWithNoBatch() throws SQLException {
+		String batchJoin = " LEFT JOIN import_batch_photo_join IB ON (p.picture_id = IB.picture_id) where IB.batch_id IS NULL";
+		PreparedStatement st = conn.prepareStatement(picture_info_select + batchJoin);
+		System.out.println(st);
+		List<PictureInfo> result = new ArrayList<PictureInfo>();
+		ResultSet rs = st.executeQuery();
+		while(rs.next()){
+			result.add(oneResultToPictureInfo(rs));
+		}
+		return result;
+		
+	}
+	
+	public void assignBatchToAllPhotos() throws SQLException {
+		//for existing photos, we don't really have an import batch, but its useful to pretend we have one.
+		// just as a useful grouping, we'll make one group for the undated photos, and one group per-month
+		// for the rest of the photos
+
+		List<PictureInfo> infos = getPicturesWithNoBatch();
+		System.out.println(infos.size() + " pictures with no batch");
+
+		System.out.println("creating batch for undated pictures");
+		List<PictureInfo> undated = new ArrayList<PictureInfo>();
+		List<PictureInfo> dated = new ArrayList<PictureInfo>();
+		for(PictureInfo p: infos) {
+			if (p.getTimeTaken() == null)
+				undated.add(p);
+			else
+				dated.add(p);
+		}
+
+		if (!undated.isEmpty())
+			addBatch(System.currentTimeMillis(), undated);
+
+		Collections.sort(dated, new Comparator<PictureInfo>(){
+			public int compare(PictureInfo a, PictureInfo b) {
+				return a.getTimeTaken().compareTo(b.getTimeTaken());
+			}
+		});
+
+		Iterator<PictureInfo> itr = dated.iterator();
+		List<PictureInfo> nextBatch = new ArrayList<PictureInfo>();
+		PictureInfo start = itr.next();
+		nextBatch.add(start);
+		long maxTime = new DateTime(start.getTimeTaken().getTimeInMillis()).withDayOfMonth(1).withMillisOfDay(0).plusMonths(1).getMillis();
+		System.out.println("next batch has maxtime = " + new DateTime(maxTime));
+		while(itr.hasNext()) {
+			PictureInfo next = itr.next();
+			if (next.getTimeTaken().getTimeInMillis() < maxTime) {
+				nextBatch.add(next);
+			} else {
+				System.out.println("creating batch w/ " + nextBatch.size() + " photos, from " + new DateTime(start.getTimeTaken()) + " to " + new DateTime(maxTime));
+				addBatch(start.getTimeTaken().getTimeInMillis(), nextBatch);
+				nextBatch.clear();
+				start = next;
+				maxTime = new DateTime(start.getTimeTaken().getTimeInMillis()).withDayOfMonth(1).withMillisOfDay(0).plusMonths(1).getMillis();
+				System.out.println("next batch has maxtime = " + new DateTime(maxTime));
+				nextBatch.add(next);
+			}
+		}
+		if (!nextBatch.isEmpty()) {
+			System.out.println("creating batch w/ " + nextBatch.size() + " photos, from " + new DateTime(start.getTimeTaken()) + " to " + new DateTime(maxTime));
+			addBatch(start.getTimeTaken().getTimeInMillis(), nextBatch);
+		}
+	}
+	
+	private void addBatch(long ts, List<PictureInfo> infos) throws SQLException {
+		int batchId = createImportBatch(ts);
+		System.out.println("creating batch id " + batchId + " with batch time = " + new DateTime(ts));
+		addPicturesToBatch(infos, batchId);
+		setBatchReviewed(true);
+	}
+
+	
 	public List<PictureInfo> getAllPictures() throws SQLException{
 		PreparedStatement st = conn.prepareStatement(picture_info_select);		
 		List<PictureInfo> result = new ArrayList<PictureInfo>();
@@ -515,6 +597,83 @@ public abstract class DBConnection implements TagDB<PictureInfo> {
 		return result;
 	}
 	
+	public Long getMinPictureDate(long ts) throws SQLException {
+		String cmd = "select min(time_taken) from picture_files where time_taken > ?";
+		PreparedStatement st = conn.prepareStatement(cmd);
+		st.setTimestamp(1, new Timestamp(ts));
+		ResultSet rs = st.executeQuery();
+		if (rs.next()) {
+			Timestamp rst = rs.getTimestamp(1);
+			if (rst == null)
+				return null;
+			else
+				return rst.getTime();
+		} else {
+			return null;
+		}
+	}
+	
+	public Long getMaxPictureDate(long ts) throws SQLException {
+		String cmd = "select max(time_taken) from picture_files where time_taken < ?";
+		PreparedStatement st = conn.prepareStatement(cmd);
+		st.setTimestamp(1, new Timestamp(ts));
+		ResultSet rs = st.executeQuery();
+		if (rs.next()) {
+			return rs.getTimestamp(1).getTime();
+		} else {
+			return null;
+		}
+	}
+
+	public int createImportBatch() throws SQLException {
+		return createImportBatch(System.currentTimeMillis());
+	}
+
+	public int createImportBatch(long ts) throws SQLException {
+		String createBatchSql = "INSERT INTO import_batch (import_time) VALUES (?)";
+		PreparedStatement createBatchSt = conn.prepareStatement(createBatchSql);
+		createBatchSt.setTimestamp(1, new Timestamp(ts));
+		createBatchSt.executeUpdate();
+
+		String getImportIdSql = "SELECT currval('import_batch_sequence')";
+		ResultSet rs = conn.createStatement().executeQuery(getImportIdSql);
+		rs.next();
+		return rs.getInt(1);
+	}
+	
+	public int getLastImportBatch() throws SQLException {
+		String cmd = "select max(batch_id) from import_batch";
+		ResultSet rs = conn.createStatement().executeQuery(cmd);
+		rs.next();
+		return rs.getInt(1);
+	}
+	
+	public void setBatchReviewed(boolean reviewed) throws SQLException {
+		String cmd = "update import_batch SET reviewed = ?";
+		PreparedStatement st = conn.prepareStatement(cmd);
+		st.setBoolean(1, reviewed);
+		st.executeUpdate();
+	}
+	
+	/**
+	 * add an import batch to pictures that have already been imported.  NOTE: this is NOT what
+	 * you want in most cases.  In general, as you import a picture, you should set its import batch.  This is
+	 * mostly for migrating old data.
+	 */
+	public void addPicturesToBatch(List<PictureInfo> pictures, int batchId) throws SQLException {
+		String cmd = "insert into import_batch_photo_join (batch_id, picture_id) values (?, ?)";
+		PreparedStatement st = conn.prepareStatement(cmd);
+		st.setInt(1, batchId);
+		for (PictureInfo p: pictures) {
+			st.setInt(2, p.id);
+			st.executeUpdate();
+		}
+	}
+	
+	public List<PictureInfo> getPicturesInBatch(int batchId) throws SQLException {
+		//TODO
+		return null;
+	}
 	
 	public File getScaledPictureFile(PictureInfo info, int width, int height) throws SQLException {
 		String cmd = "SELECT scaled_filename FROM scaled_pictures " + 
